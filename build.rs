@@ -29,7 +29,7 @@ const EXPECTED_JVM_FILENAME: &str = "libjvm.so";
 const EXPECTED_JVM_FILENAME: &str = "libjvm.dylib";
 
 fn main() {
-    if cfg!(feature = "invocation") {
+    if false { //cfg!(feature = "invocation") {
         let java_home = match env::var("JAVA_HOME") {
             Ok(java_home) => PathBuf::from(java_home),
             Err(_) => find_java_home()
