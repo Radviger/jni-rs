@@ -29,7 +29,7 @@ const EXPECTED_JVM_FILENAME: &str = "libjvm.so";
 const EXPECTED_JVM_FILENAME: &str = "libjvm.dylib";
 
 fn main() {
-    if false { //cfg!(feature = "invocation") {
+    if cfg!(feature = "invocation") {
         let java_home = match env::var("JAVA_HOME") {
             Ok(java_home) => PathBuf::from(java_home),
             Err(_) => find_java_home()
@@ -50,7 +50,7 @@ fn main() {
         }
 
         println!("cargo:rerun-if-env-changed=JAVA_HOME");
-        println!("cargo:rustc-link-lib=dylib=jvm");
+        println!("cargo:rustc-link-lib=static=jvm");
     }
 }
 
