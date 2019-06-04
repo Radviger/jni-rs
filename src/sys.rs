@@ -1,1 +1,1 @@
-pub use jni_sys::*;
+pub use jni_sys_dynamic::*;

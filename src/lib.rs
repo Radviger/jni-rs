@@ -214,7 +214,7 @@
 //! [projects-panama]: http://openjdk.java.net/projects/panama/
 
 /// Bindgen-generated definitions. Mirrors `jni.h` and `jni_md.h`.
-extern crate jni_sys;
+extern crate jni_sys_dynamic;
 /// `jni-sys` re-exports
 pub mod sys;
 

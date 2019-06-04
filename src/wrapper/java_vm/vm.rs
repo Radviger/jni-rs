@@ -8,6 +8,8 @@ use std::ptr;
 
 #[cfg(feature = "invocation")]
 use InitArgs;
+#[cfg(feature = "invocation")]
+use std::ffi::OsStr;
 
 /// The invocation API.
 pub struct JavaVM(*mut sys::JavaVM);
@@ -18,18 +20,20 @@ unsafe impl Sync for JavaVM {}
 impl JavaVM {
     /// Launch a new JavaVM using the provided init args
     #[cfg(feature = "invocation")]
-    pub fn new(args: InitArgs) -> Result<Self> {
+    pub fn new<P: AsRef<OsStr>>(path: P, args: InitArgs) -> Result<Self> {
         use std::os::raw::c_void;
 
         let mut ptr: *mut sys::JavaVM = ::std::ptr::null_mut();
         let mut env: *mut sys::JNIEnv = ::std::ptr::null_mut();
 
+        let library = sys::JNILibrary::new(path).expect("JVM library loading failed");
+
         unsafe {
-            jni_error_code_to_result(sys::JNI_CreateJavaVM(
+            jni_error_code_to_result(library.create_java_vm(
                 &mut ptr as *mut _,
                 &mut env as *mut *mut sys::JNIEnv as *mut *mut c_void,
                 args.inner_ptr(),
-            ))?;
+            ).expect("JVM creation failed"))?;
 
             let vm = Self::from_raw(ptr)?;
             java_vm_unchecked!(vm.0, DetachCurrentThread);
