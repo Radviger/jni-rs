@@ -174,7 +174,6 @@
 //!
 //! The exact relative path to `jvm` library is version-specific.
 //!
-//! For more information - see documentation in [build.rs](https://github.com/jni-rs/jni-rs/tree/master/build.rs).
 //!
 //! ## See Also
 //!
