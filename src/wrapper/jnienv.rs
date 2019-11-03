@@ -62,6 +62,9 @@ use signature::TypeSignature;
 
 use JNIVersion;
 use JavaVM;
+use jni_sys_dynamic::JNINativeMethod;
+use std::ffi::CString;
+use std::mem::ManuallyDrop;
 
 /// FFI-compatible JNIEnv struct. You can safely use this as the JNIEnv argument
 /// to exported methods that will be called by java. This is where most of the
@@ -167,6 +170,23 @@ impl<'a> JNIEnv<'a> {
         let name = name.into();
         let class = jni_non_null_call!(self.internal, FindClass, name.as_ptr());
         Ok(class)
+    }
+
+    /// Register native method for target class
+    pub fn register_natives<T>(&self, class: T, methods: Vec<NativeMethod>) -> Result<jint>
+    where
+        T: Desc<'a, JClass<'a>>,
+    {
+        let class = class.lookup(self)?;
+        let methods: Vec<JNINativeMethod> = methods.into_iter().map(|m|m.into()).collect();
+
+        Ok(jni_unchecked!(
+            self.internal,
+            RegisterNatives,
+            class.into_inner(),
+            methods.as_ptr(),
+            methods.len() as _
+        ))
     }
 
     /// Returns the superclass for a particular class OR `JObject::null()` for `java.lang.Object` or
@@ -1848,6 +1868,32 @@ impl<'a> Drop for MonitorGuard<'a> {
         match res {
             Err(e) => warn!("error releasing java monitor: {}", e),
             _ => {}
+        }
+    }
+}
+
+/// Native method descriptor
+pub struct NativeMethod {
+    name: &'static str,
+    signature: &'static str,
+    pointer: *mut ()
+}
+
+impl NativeMethod {
+    /// Creates a new native method descriptor
+    pub fn new(name: &'static str, signature: &'static str, pointer: *mut ()) -> NativeMethod {
+        NativeMethod {
+            name, signature, pointer
+        }
+    }
+}
+
+impl Into<JNINativeMethod> for NativeMethod {
+    fn into(self) -> JNINativeMethod {
+        JNINativeMethod {
+            name: ManuallyDrop::new(CString::new(self.name).unwrap()).as_ptr() as *mut _,
+            signature: ManuallyDrop::new(CString::new(self.signature).unwrap()).as_ptr() as *mut _,
+            fnPtr: self.pointer as *mut _
         }
     }
 }
