@@ -105,8 +105,8 @@ impl JavaVM {
         }
     }
 
-    pub fn get_library(&self) -> &sys::JNILibrary {
-        &self.1
+    pub fn get_library(&self) -> Option<&sys::JNILibrary> {
+        self.1.as_ref()
     }
 }
 
