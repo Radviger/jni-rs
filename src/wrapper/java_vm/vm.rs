@@ -12,7 +12,7 @@ use InitArgs;
 use std::ffi::OsStr;
 
 /// The invocation API.
-pub struct JavaVM(*mut sys::JavaVM);
+pub struct JavaVM(*mut sys::JavaVM, sys::JNILibrary);
 
 unsafe impl Send for JavaVM {}
 unsafe impl Sync for JavaVM {}
@@ -20,7 +20,7 @@ unsafe impl Sync for JavaVM {}
 impl JavaVM {
     /// Launch a new JavaVM using the provided init args
     #[cfg(feature = "invocation")]
-    pub fn new<P: AsRef<OsStr>>(path: P, args: InitArgs) -> Result<(Self, sys::JNILibrary)> {
+    pub fn new<P: AsRef<OsStr>>(path: P, args: InitArgs) -> Result<Self> {
         use std::os::raw::c_void;
 
         let mut ptr: *mut sys::JavaVM = ::std::ptr::null_mut();
@@ -35,17 +35,17 @@ impl JavaVM {
                 args.inner_ptr(),
             ).expect("JVM creation failed"))?;
 
-            let vm = Self::from_raw(ptr)?;
+            let vm = Self::from_raw(ptr, library)?;
             java_vm_unchecked!(vm.0, DetachCurrentThread);
 
-            Ok((vm, library))
+            Ok(vm)
         }
     }
 
     /// Create a JavaVM from a raw pointer.
-    pub unsafe fn from_raw(ptr: *mut sys::JavaVM) -> Result<Self> {
+    pub unsafe fn from_raw(ptr: *mut sys::JavaVM, library: sys::JNILibrary) -> Result<Self> {
         non_null!(ptr, "from_raw ptr argument");
-        Ok(JavaVM(ptr))
+        Ok(JavaVM(ptr, library))
     }
 
     /// Returns underlying `sys::JavaVM` interface.
@@ -103,6 +103,10 @@ impl JavaVM {
 
             JNIEnv::from_raw(ptr as *mut sys::JNIEnv)
         }
+    }
+
+    pub fn get_library(&self) -> &sys::JNILibrary {
+        &self.1
     }
 }
 
