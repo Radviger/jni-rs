@@ -20,7 +20,7 @@ unsafe impl Sync for JavaVM {}
 impl JavaVM {
     /// Launch a new JavaVM using the provided init args
     #[cfg(feature = "invocation")]
-    pub fn new<P: AsRef<OsStr>>(path: P, args: InitArgs) -> Result<Self> {
+    pub fn new<P: AsRef<OsStr>>(path: P, args: InitArgs) -> Result<(Self, sys::JNILibrary)> {
         use std::os::raw::c_void;
 
         let mut ptr: *mut sys::JavaVM = ::std::ptr::null_mut();
