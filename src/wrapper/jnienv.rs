@@ -1840,7 +1840,7 @@ impl<'a> JNIEnv<'a> {
         let mut raw = ptr::null_mut();
         let res = jni_unchecked!(self.internal, GetJavaVM, &mut raw);
         jni_error_code_to_result(res)?;
-        unsafe { JavaVM::from_raw(raw) }
+        unsafe { JavaVM::from_raw(raw, None) }
     }
 
     /// Ensures that at least a given number of local references can be created

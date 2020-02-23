@@ -12,7 +12,7 @@ use InitArgs;
 use std::ffi::OsStr;
 
 /// The invocation API.
-pub struct JavaVM(*mut sys::JavaVM, sys::JNILibrary);
+pub struct JavaVM(*mut sys::JavaVM, Option<sys::JNILibrary>);
 
 unsafe impl Send for JavaVM {}
 unsafe impl Sync for JavaVM {}
@@ -35,7 +35,7 @@ impl JavaVM {
                 args.inner_ptr(),
             ).expect("JVM creation failed"))?;
 
-            let vm = Self::from_raw(ptr, library)?;
+            let vm = Self::from_raw(ptr, Some(library))?;
             java_vm_unchecked!(vm.0, DetachCurrentThread);
 
             Ok(vm)
@@ -43,7 +43,7 @@ impl JavaVM {
     }
 
     /// Create a JavaVM from a raw pointer.
-    pub unsafe fn from_raw(ptr: *mut sys::JavaVM, library: sys::JNILibrary) -> Result<Self> {
+    pub unsafe fn from_raw(ptr: *mut sys::JavaVM, library: Option<sys::JNILibrary>) -> Result<Self> {
         non_null!(ptr, "from_raw ptr argument");
         Ok(JavaVM(ptr, library))
     }
