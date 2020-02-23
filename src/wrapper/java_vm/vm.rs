@@ -38,7 +38,7 @@ impl JavaVM {
             let vm = Self::from_raw(ptr)?;
             java_vm_unchecked!(vm.0, DetachCurrentThread);
 
-            Ok(vm)
+            Ok((vm, library))
         }
     }
 
