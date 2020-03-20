@@ -1662,7 +1662,7 @@ impl<'a> JNIEnv<'a> {
             JValue::Bool(value) => jni_void_call!(self.internal, SetStaticBooleanField, class, field_id, value),
             JValue::Float(value) => jni_void_call!(self.internal, SetStaticFloatField, class, field_id, value),
             JValue::Double(value) => jni_void_call!(self.internal, SetStaticDoubleField, class, field_id, value),
-            JValue::Void => Err(ErrorKind::WrongJValueType("void", "see java field").into()),
+            JValue::Void => return Err(ErrorKind::WrongJValueType("void", "see java field").into()),
         })
     }
 
