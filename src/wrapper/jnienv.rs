@@ -1731,7 +1731,7 @@ impl<'a> JNIEnv<'a> {
 
     /// Get a static field. Requires a class lookup and a field id lookup
     /// internally.
-    pub fn get_static_field<T, U, S, V>(&self, class: T, field: U, sig: V) -> Result<JValue>
+    pub fn get_static_field<T, U, V>(&self, class: T, field: U, sig: V) -> Result<JValue>
     where
         T: Desc<'a, JClass<'a>>,
         U: Into<JNIString>,
@@ -1748,7 +1748,7 @@ impl<'a> JNIEnv<'a> {
 
     /// Set a static field. Requires a class lookup and a field id lookup
     /// internally.
-    pub fn set_static_field<T, U, S>(&self, class: T, field: U, sig: S, value: V) -> Result<JValue>
+    pub fn set_static_field<T, U, S, V>(&self, class: T, field: U, sig: S, value: V) -> Result<()>
     where
         T: Desc<'a, JClass<'a>>,
         U: Into<JNIString>,
@@ -1761,7 +1761,7 @@ impl<'a> JNIEnv<'a> {
         // and we'll need that for the next call.
         let class = class.lookup(self)?;
 
-        self.get_static_field_unchecked(class, (class, field, sig), value)
+        self.set_static_field_unchecked(class, (class, field, sig), value)
     }
 
     /// Surrenders ownership of a rust object to Java. Requires an object with a
