@@ -1753,7 +1753,7 @@ impl<'a> JNIEnv<'a> {
         T: Desc<'a, JClass<'a>>,
         U: Into<JNIString>,
         S: Into<JNIString> + AsRef<str>,
-        V: Into<JValue>
+        V: Into<JValue<'a>>
     {
         let ty = JavaType::from_str(sig.as_ref())?;
 
