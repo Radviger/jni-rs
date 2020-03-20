@@ -1754,8 +1754,6 @@ impl<'a> JNIEnv<'a> {
         U: Into<JNIString>,
         V: Into<JValue>,
     {
-        let ty = JavaType::from_str(sig.as_ref())?;
-
         // go ahead and look up the class since it's already Copy,
         // and we'll need that for the next call.
         let class = class.lookup(self)?;
