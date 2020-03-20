@@ -1638,6 +1638,34 @@ impl<'a> JNIEnv<'a> {
         self.set_field_unchecked(obj, (&class, name, ty), val)
     }
 
+    /// Set a static field without checking the provided value type against the actual
+    /// field.
+    pub fn set_static_field_unchecked<T, U>(
+        &self,
+        class: T,
+        field: U,
+        value: JValue<'a>
+    ) -> Result<()>
+        where
+            T: Desc<'a, JClass<'a>>,
+            U: Desc<'a, JStaticFieldID<'a>>,
+    {
+        let class = class.lookup(self)?.into_inner();
+        let field_id = field.lookup(self)?.into_inner();
+        Ok(match value {
+            JValue::Object(value) => jni_void_call!(self.internal, SetStaticObjectField, class, field_id, *value),
+            JValue::Byte(value) => jni_void_call!(self.internal, SetStaticByteField, class, field_id, value),
+            JValue::Char(value) => jni_void_call!(self.internal, SetStaticCharField, class, field_id, value),
+            JValue::Short(value) => jni_void_call!(self.internal, SetStaticShortField, class, field_id, value),
+            JValue::Int(value) => jni_void_call!(self.internal, SetStaticIntField, class, field_id, value),
+            JValue::Long(value) => jni_void_call!(self.internal, SetStaticLongField, class, field_id, value),
+            JValue::Bool(value) => jni_void_call!(self.internal, SetStaticBooleanField, class, field_id, value),
+            JValue::Float(value) => jni_void_call!(self.internal, SetStaticFloatField, class, field_id, value),
+            JValue::Double(value) => jni_void_call!(self.internal, SetStaticDoubleField, class, field_id, value),
+            JValue::Void => Err(ErrorKind::WrongJValueType("void", "see java field").into()),
+        })
+    }
+
     /// Get a static field without checking the provided type against the actual
     /// field.
     pub fn get_static_field_unchecked<T, U>(
@@ -1651,7 +1679,6 @@ impl<'a> JNIEnv<'a> {
         U: Desc<'a, JStaticFieldID<'a>>,
     {
         let class = class.lookup(self)?.into_inner();
-
         let field_id = field.lookup(self)?.into_inner();
 
         // TODO clean this up
