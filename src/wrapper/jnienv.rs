@@ -1761,7 +1761,7 @@ impl<'a> JNIEnv<'a> {
         // and we'll need that for the next call.
         let class = class.lookup(self)?;
 
-        self.set_static_field_unchecked(class, (class, field, sig), value)
+        self.set_static_field_unchecked(class, (class, field, sig), value.into())
     }
 
     /// Surrenders ownership of a rust object to Java. Requires an object with a
