@@ -1746,6 +1746,23 @@ impl<'a> JNIEnv<'a> {
         self.get_static_field_unchecked(class, (class, field, sig), ty)
     }
 
+    /// Set a static field. Requires a class lookup and a field id lookup
+    /// internally.
+    pub fn set_static_field<T, U, V>(&self, class: T, field: U, value: V) -> Result<()>
+    where
+        T: Desc<'a, JClass<'a>>,
+        U: Into<JNIString>,
+        V: Into<JValue>,
+    {
+        let ty = JavaType::from_str(sig.as_ref())?;
+
+        // go ahead and look up the class since it's already Copy,
+        // and we'll need that for the next call.
+        let class = class.lookup(self)?;
+
+        self.set_static_field_unchecked(class, (class, field, sig), value.into())
+    }
+
     /// Surrenders ownership of a rust object to Java. Requires an object with a
     /// `long` field to store the pointer. The Rust value will be wrapped in a
     /// Mutex since Java will be controlling where it'll be used thread-wise.
