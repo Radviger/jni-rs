@@ -57,6 +57,22 @@ error_chain!{
             description("Current thread is not attached to the java VM")
             display("Current thread is not attached to the java VM")
         }
+        InvalidVersion {
+            description("Invalid JNI version")
+            display("Invalid JNI version")
+        }
+        NotEnoughMemory {
+            description("Not enough memory")
+            display("Not enough memory")
+        }
+        AreadyCreated {
+            description("VM is already created")
+            display("VM is already created")
+        }
+        InvalidArguments {
+            description("Invalid VM arguments supplied")
+            display("Invalid VM arguments supplied")
+        }
         Other(error: sys::jint) {
             description("JNI error")
             display("JNI error: {}", error)
@@ -76,6 +92,10 @@ pub fn jni_error_code_to_result(code: sys::jint) -> Result<()> {
     match code {
         sys::JNI_OK => Ok(()),
         sys::JNI_EDETACHED => Err(Error::from(ErrorKind::ThreadDetached)),
+        sys::JNI_EVERSION => Err(Error::from(ErrorKind::InvalidVersion)),
+        sys::JNI_ENOMEM => Err(Error::from(ErrorKind::NotEnoughMemory)),
+        sys::JNI_EEXIST => Err(Error::from(ErrorKind::AreadyCreated)),
+        sys::JNI_EINVAL => Err(Error::from(ErrorKind::InvalidArguments)),
         _ => Err(Error::from(ErrorKind::Other(code))),
     }
 }
