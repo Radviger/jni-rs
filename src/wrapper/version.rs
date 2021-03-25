@@ -1,4 +1,5 @@
 use sys::{JNI_VERSION_1_1, JNI_VERSION_1_2, JNI_VERSION_1_4, JNI_VERSION_1_6, JNI_VERSION_1_8};
+use jni_sys_dynamic::{JNI_VERSION_9, JNI_VERSION_10};
 
 /// JNI Version
 ///
@@ -11,6 +12,8 @@ pub enum JNIVersion {
     V4,
     V6,
     V8,
+    V9,
+    V10,
     Invalid(i32),
 }
 
@@ -22,6 +25,8 @@ impl From<i32> for JNIVersion {
             JNI_VERSION_1_4 => JNIVersion::V4,
             JNI_VERSION_1_6 => JNIVersion::V6,
             JNI_VERSION_1_8 => JNIVersion::V8,
+            JNI_VERSION_9   => JNIVersion::V9,
+            JNI_VERSION_10  => JNIVersion::V10,
             v => JNIVersion::Invalid(v),
         }
     }
@@ -30,11 +35,13 @@ impl From<i32> for JNIVersion {
 impl From<JNIVersion> for i32 {
     fn from(other: JNIVersion) -> Self {
         match other {
-            JNIVersion::V1 => JNI_VERSION_1_1,
-            JNIVersion::V2 => JNI_VERSION_1_2,
-            JNIVersion::V4 => JNI_VERSION_1_4,
-            JNIVersion::V6 => JNI_VERSION_1_6,
-            JNIVersion::V8 => JNI_VERSION_1_8,
+            JNIVersion::V1  => JNI_VERSION_1_1,
+            JNIVersion::V2  => JNI_VERSION_1_2,
+            JNIVersion::V4  => JNI_VERSION_1_4,
+            JNIVersion::V6  => JNI_VERSION_1_6,
+            JNIVersion::V8  => JNI_VERSION_1_8,
+            JNIVersion::V9  => JNI_VERSION_9,
+            JNIVersion::V10 => JNI_VERSION_10,
             JNIVersion::Invalid(v) => v,
         }
     }
