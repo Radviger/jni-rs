@@ -232,7 +232,7 @@ mod wrapper {
     pub use self::version::*;
 
     #[macro_use]
-    mod macros;
+    pub mod macros;
 
     /// Errors. Do you really need more explanation?
     pub mod errors;

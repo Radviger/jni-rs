@@ -1,6 +1,7 @@
 // A JNI call that is expected to return a non-null pointer when successful.
 // If a null pointer is returned, it is converted to an Err.
 // Returns Err if there is a pending exception after the call.
+#[macro_export]
 macro_rules! jni_non_null_call {
     ( $jnienv:expr, $name:tt $(, $args:expr )* ) => ({
         let res = jni_non_void_call!($jnienv, $name $(, $args)*);
@@ -10,6 +11,7 @@ macro_rules! jni_non_null_call {
 
 // A non-void JNI call. May return anything — primitives, references, error codes.
 // Returns Err if there is a pending exception after the call.
+#[macro_export]
 macro_rules! jni_non_void_call {
     ( $jnienv:expr, $name:tt $(, $args:expr )* ) => ({
         trace!("calling checked jni method: {}", stringify!($name));
@@ -23,6 +25,7 @@ macro_rules! jni_non_void_call {
     })
 }
 
+#[macro_export]
 macro_rules! non_null {
     ( $obj:expr, $ctx:expr ) => {
         if $obj.is_null() {
@@ -35,6 +38,7 @@ macro_rules! non_null {
 
 // A void JNI call.
 // Returns Err if there is a pending exception after the call.
+#[macro_export]
 macro_rules! jni_void_call {
     ( $jnienv:expr, $name:tt $(, $args:expr )* ) => ({
         trace!("calling checked jni method: {}", stringify!($name));
@@ -49,6 +53,7 @@ macro_rules! jni_void_call {
 
 // A JNI call that does not check for exceptions or verify
 // error codes (if any).
+#[macro_export]
 macro_rules! jni_unchecked {
     ( $jnienv:expr, $name:tt $(, $args:expr )* ) => ({
         trace!("calling unchecked jni method: {}", stringify!($name));
@@ -59,6 +64,7 @@ macro_rules! jni_unchecked {
     })
 }
 
+#[macro_export]
 macro_rules! jni_method {
     ( $jnienv:expr, $name:tt ) => ({
         trace!("looking up jni method {}", stringify!($name));
@@ -77,6 +83,7 @@ macro_rules! jni_method {
     })
 }
 
+#[macro_export]
 macro_rules! check_exception {
     ( $jnienv:expr ) => {
         trace!("checking for exception");
@@ -92,6 +99,7 @@ macro_rules! check_exception {
     }
 }
 
+#[macro_export]
 macro_rules! catch {
     ( move $b:block ) => {
         (move || $b)()
@@ -101,6 +109,7 @@ macro_rules! catch {
     };
 }
 
+#[macro_export]
 macro_rules! java_vm_unchecked {
     ( $java_vm:expr, $name:tt $(, $args:expr )* ) => ({
         trace!("calling unchecked JavaVM method: {}", stringify!($name));
@@ -108,6 +117,7 @@ macro_rules! java_vm_unchecked {
     })
 }
 
+#[macro_export]
 macro_rules! java_vm_method {
     ( $jnienv:expr, $name:tt ) => ({
         trace!("looking up JavaVM method {}", stringify!($name));
@@ -126,6 +136,7 @@ macro_rules! java_vm_method {
     })
 }
 
+#[macro_export]
 macro_rules! deref {
     ( $obj:expr, $ctx:expr ) => {
         if $obj.is_null() {
