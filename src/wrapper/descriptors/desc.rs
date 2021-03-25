@@ -8,7 +8,7 @@ use errors::*;
 /// concrete types themselves in addition to their descriptors.
 pub trait Desc<'a, T> {
     /// Look up the concrete type from the JVM.
-    fn lookup(self, &JNIEnv<'a>) -> Result<T>;
+    fn lookup(self, env: &JNIEnv<'a>) -> Result<T>;
 }
 
 impl<'a, T> Desc<'a, T> for T {
