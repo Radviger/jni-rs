@@ -1487,14 +1487,8 @@ impl<'a> JNIEnv<'a> {
         Ok(())
     }
 
-    /// Get a field without checking the provided type against the actual field.
-    pub fn get_field_unchecked<T>(&self, obj: JObject, field: T, ty: JavaType) -> Result<JValue<'a>>
-    where
-        T: Desc<'a, JFieldID<'a>>,
-    {
-        non_null!(obj, "get_field_typed obj argument");
-
-        let field = field.lookup(self)?.into_inner();
+    pub fn get_field_unchecked_fast(&self, obj: JObject, field: JFieldID<'a>, ty: JavaType) -> Result<JValue<'a>> {
+        let field = field.into_inner();
         let obj = obj.into_inner();
 
         // TODO clean this up
@@ -1538,6 +1532,16 @@ impl<'a> JNIEnv<'a> {
                 v.into()
             }
         })
+    }
+
+    /// Get a field without checking the provided type against the actual field.
+    pub fn get_field_unchecked<T>(&self, obj: JObject, field: T, ty: JavaType) -> Result<JValue<'a>>
+    where
+        T: Desc<'a, JFieldID<'a>>,
+    {
+        non_null!(obj, "get_field_typed obj argument");
+        let field = field.lookup(self)?;
+        self.get_field_unchecked_fast(obj, field, ty)
     }
 
     /// Set a field without any type checking.
