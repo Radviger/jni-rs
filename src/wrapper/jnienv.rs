@@ -746,27 +746,15 @@ impl<'a> JNIEnv<'a> {
         }) // match parsed.ret
     }
 
-    /// Call an object method in an unsafe manner. This does nothing to check
-    /// whether the method is valid to call on the object, whether the return
-    /// type is correct, or whether the number of args is valid for the method.
-    ///
-    /// Under the hood, this simply calls the `Call<Type>MethodA` method with
-    /// the provided arguments.
-    pub fn call_method_unchecked<T>(
+    pub fn call_method_unchecked_fast(
         &self,
         obj: JObject,
-        method_id: T,
+        method_id: JMethodID<'a>,
         ret: JavaType,
-        args: &[JValue],
-    ) -> Result<JValue<'a>>
-    where
-        T: Desc<'a, JMethodID<'a>>,
-    {
-        let method_id = method_id.lookup(self)?.into_inner();
-
+        args: &[jvalue]
+    ) -> Result<JValue<'a>> {
+        let method_id = method_id.into_inner();
         let obj = obj.into_inner();
-
-        let args: Vec<jvalue> = args.into_iter().map(|v| v.to_jni()).collect();
         let jni_args = args.as_ptr();
 
         // TODO clean this up
@@ -834,6 +822,27 @@ impl<'a> JNIEnv<'a> {
                 v.into()
             } // JavaType::Primitive
         }) // match parsed.ret
+    }
+
+    /// Call an object method in an unsafe manner. This does nothing to check
+    /// whether the method is valid to call on the object, whether the return
+    /// type is correct, or whether the number of args is valid for the method.
+    ///
+    /// Under the hood, this simply calls the `Call<Type>MethodA` method with
+    /// the provided arguments.
+    pub fn call_method_unchecked<T>(
+        &self,
+        obj: JObject,
+        method_id: T,
+        ret: JavaType,
+        args: &[JValue],
+    ) -> Result<JValue<'a>>
+    where
+        T: Desc<'a, JMethodID<'a>>,
+    {
+        let method_id = method_id.lookup(self)?;
+        let args: Vec<jvalue> = args.into_iter().map(|v| v.to_jni()).collect();
+        self.call_method_unchecked_fast(obj, method_id, ret, &args)
     }
 
     /// Calls an object method safely. This comes with a number of
