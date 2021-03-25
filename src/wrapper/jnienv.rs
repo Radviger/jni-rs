@@ -635,29 +635,15 @@ impl<'a> JNIEnv<'a> {
         Ok(jni_unchecked!(self.internal, GetObjectClass, obj.into_inner()).into())
     }
 
-    /// Call a static method in an unsafe manner. This does nothing to check
-    /// whether the method is valid to call on the class, whether the return
-    /// type is correct, or whether the number of args is valid for the method.
-    ///
-    /// Under the hood, this simply calls the `CallStatic<Type>MethodA` method
-    /// with the provided arguments.
-    pub fn call_static_method_unchecked<T, U>(
+    pub fn call_static_method_unchecked_fast(
         &self,
-        class: T,
-        method_id: U,
+        class: JClass<'a>,
+        method_id: JStaticMethodID<'a>,
         ret: JavaType,
-        args: &[JValue],
-    ) -> Result<JValue<'a>>
-    where
-        T: Desc<'a, JClass<'a>>,
-        U: Desc<'a, JStaticMethodID<'a>>,
-    {
-        let class = class.lookup(self)?;
-
-        let method_id = method_id.lookup(self)?.into_inner();
-
+        args: &[jvalue]
+    ) -> Result<JValue<'a>> {
+        let method_id = method_id.into_inner();
         let class = class.into_inner();
-        let args: Vec<jvalue> = args.into_iter().map(|v| v.to_jni()).collect();
         let jni_args = args.as_ptr();
 
         // TODO clean this up
@@ -744,6 +730,29 @@ impl<'a> JNIEnv<'a> {
                 v.into()
             } // JavaType::Primitive
         }) // match parsed.ret
+    }
+
+    /// Call a static method in an unsafe manner. This does nothing to check
+    /// whether the method is valid to call on the class, whether the return
+    /// type is correct, or whether the number of args is valid for the method.
+    ///
+    /// Under the hood, this simply calls the `CallStatic<Type>MethodA` method
+    /// with the provided arguments.
+    pub fn call_static_method_unchecked<T, U>(
+        &self,
+        class: T,
+        method_id: U,
+        ret: JavaType,
+        args: &[JValue],
+    ) -> Result<JValue<'a>>
+    where
+        T: Desc<'a, JClass<'a>>,
+        U: Desc<'a, JStaticMethodID<'a>>,
+    {
+        let method_id = method_id.lookup(self)?;
+        let class = class.lookup(self)?;
+        let args: Vec<jvalue> = args.into_iter().map(|v| v.to_jni()).collect();
+        self.call_static_method_unchecked_fast(class, method_id, ret, &args)
     }
 
     pub fn call_method_unchecked_fast(
@@ -947,6 +956,23 @@ impl<'a> JNIEnv<'a> {
         self.new_object_unchecked(class, method_id, ctor_args)
     }
 
+    pub fn new_object_unchecked_fast(
+        &self,
+        class: JClass<'a>,
+        ctor_id: JMethodID<'a>,
+        ctor_args: &[jvalue]
+    ) -> Result<JObject<'a>> {
+        let jni_args = ctor_args.as_ptr();
+
+        Ok(jni_non_null_call!(
+            self.internal,
+            NewObjectA,
+            class.into_inner(),
+            ctor_id.into_inner(),
+            jni_args
+        ))
+    }
+
     /// Create a new object using a constructor. Arguments aren't checked
     /// because
     /// of the `JMethodID` usage.
@@ -960,17 +986,8 @@ impl<'a> JNIEnv<'a> {
         T: Desc<'a, JClass<'c>>,
     {
         let class = class.lookup(self)?;
-
-        let jni_args: Vec<jvalue> = ctor_args.into_iter().map(|v| v.to_jni()).collect();
-        let jni_args = jni_args.as_ptr();
-
-        Ok(jni_non_null_call!(
-            self.internal,
-            NewObjectA,
-            class.into_inner(),
-            ctor_id.into_inner(),
-            jni_args
-        ))
+        let ctor_args: Vec<jvalue> = ctor_args.into_iter().map(|v| v.to_jni()).collect();
+        self.new_object_unchecked_fast(class, ctor_id, &ctor_args)
     }
 
     /// Cast a JObject to a JString. This won't throw exceptions or return errors
@@ -1501,30 +1518,14 @@ impl<'a> JNIEnv<'a> {
             JavaType::Method(_) => unimplemented!(),
             JavaType::Primitive(p) => {
                 let v: JValue = match p {
-                    Primitive::Boolean => {
-                        (jni_unchecked!(self.internal, GetBooleanField, obj, field)
-                            == sys::JNI_TRUE)
-                            .into()
-                    }
-                    Primitive::Char => {
-                        jni_unchecked!(self.internal, GetCharField, obj, field).into()
-                    }
-                    Primitive::Short => {
-                        jni_unchecked!(self.internal, GetShortField, obj, field).into()
-                    }
+                    Primitive::Boolean => (jni_unchecked!(self.internal, GetBooleanField, obj, field) == sys::JNI_TRUE).into(),
+                    Primitive::Char => jni_unchecked!(self.internal, GetCharField, obj, field).into(),
+                    Primitive::Short => jni_unchecked!(self.internal, GetShortField, obj, field).into(),
                     Primitive::Int => jni_unchecked!(self.internal, GetIntField, obj, field).into(),
-                    Primitive::Long => {
-                        jni_unchecked!(self.internal, GetLongField, obj, field).into()
-                    }
-                    Primitive::Float => {
-                        jni_unchecked!(self.internal, GetFloatField, obj, field).into()
-                    }
-                    Primitive::Double => {
-                        jni_unchecked!(self.internal, GetDoubleField, obj, field).into()
-                    }
-                    Primitive::Byte => {
-                        jni_unchecked!(self.internal, GetByteField, obj, field).into()
-                    }
+                    Primitive::Long => jni_unchecked!(self.internal, GetLongField, obj, field).into(),
+                    Primitive::Float => jni_unchecked!(self.internal, GetFloatField, obj, field).into(),
+                    Primitive::Double => jni_unchecked!(self.internal, GetDoubleField, obj, field).into(),
+                    Primitive::Byte => jni_unchecked!(self.internal, GetByteField, obj, field).into(),
                     Primitive::Void => {
                         return Err(ErrorKind::WrongJValueType("void", "see java field").into());
                     }
@@ -1544,14 +1545,8 @@ impl<'a> JNIEnv<'a> {
         self.get_field_unchecked_fast(obj, field, ty)
     }
 
-    /// Set a field without any type checking.
-    pub fn set_field_unchecked<T>(&self, obj: JObject, field: T, val: JValue) -> Result<()>
-    where
-        T: Desc<'a, JFieldID<'a>>,
-    {
-        non_null!(obj, "set_field_typed obj argument");
-
-        let field = field.lookup(self)?.into_inner();
+    pub fn set_field_unchecked_fast(&self, obj: JObject, field: JFieldID, val: JValue) -> Result<()> {
+        let field = field.into_inner();
         let obj = obj.into_inner();
 
         // TODO clean this up
@@ -1590,6 +1585,17 @@ impl<'a> JNIEnv<'a> {
         };
 
         Ok(())
+    }
+
+    /// Set a field without any type checking.
+    pub fn set_field_unchecked<T>(&self, obj: JObject, field: T, val: JValue) -> Result<()>
+    where
+        T: Desc<'a, JFieldID<'a>>,
+    {
+        non_null!(obj, "set_field_typed obj argument");
+
+        let field = field.lookup(self)?;
+        self.set_field_unchecked_fast(obj, field, val)
     }
 
     /// Get a field. Requires an object class lookup and a field id lookup
@@ -1651,20 +1657,14 @@ impl<'a> JNIEnv<'a> {
         self.set_field_unchecked(obj, (&class, name, ty), val)
     }
 
-    /// Set a static field without checking the provided value type against the actual
-    /// field.
-    pub fn set_static_field_unchecked<T, U>(
+    pub fn set_static_field_unchecked_fast(
         &self,
-        class: T,
-        field: U,
+        class: JClass<'a>,
+        field: JStaticFieldID<'a>,
         value: JValue<'a>
-    ) -> Result<()>
-        where
-            T: Desc<'a, JClass<'a>>,
-            U: Desc<'a, JStaticFieldID<'a>>,
-    {
-        let class = class.lookup(self)?.into_inner();
-        let field_id = field.lookup(self)?.into_inner();
+    ) -> Result<()> {
+        let class = class.into_inner();
+        let field_id = field.into_inner();
         Ok(match value {
             JValue::Object(value) => jni_void_call!(self.internal, SetStaticObjectField, class, field_id, *value),
             JValue::Byte(value) => jni_void_call!(self.internal, SetStaticByteField, class, field_id, value),
@@ -1679,21 +1679,31 @@ impl<'a> JNIEnv<'a> {
         })
     }
 
-    /// Get a static field without checking the provided type against the actual
+    /// Set a static field without checking the provided value type against the actual
     /// field.
-    pub fn get_static_field_unchecked<T, U>(
+    pub fn set_static_field_unchecked<T, U>(
         &self,
         class: T,
         field: U,
-        ty: JavaType,
-    ) -> Result<JValue<'a>>
-    where
-        T: Desc<'a, JClass<'a>>,
-        U: Desc<'a, JStaticFieldID<'a>>,
+        value: JValue<'a>
+    ) -> Result<()>
+        where
+            T: Desc<'a, JClass<'a>>,
+            U: Desc<'a, JStaticFieldID<'a>>,
     {
-        let class = class.lookup(self)?.into_inner();
-        let field_id = field.lookup(self)?.into_inner();
+        let class = class.lookup(self)?;
+        let field_id = field.lookup(self)?;
+        self.set_static_field_unchecked_fast(class, field_id, value)
+    }
 
+    pub fn get_static_field_unchecked_fast(
+        &self,
+        class: JClass<'a>,
+        field: JStaticFieldID<'a>,
+        ty: JavaType
+    ) -> Result<JValue<'a>> {
+        let class = class.into_inner();
+        let field_id = field.into_inner();
         // TODO clean this up
         Ok(match ty {
             JavaType::Object(_) | JavaType::Array(_) => {
@@ -1740,6 +1750,23 @@ impl<'a> JNIEnv<'a> {
                 v.into()
             }
         })
+    }
+
+    /// Get a static field without checking the provided type against the actual
+    /// field.
+    pub fn get_static_field_unchecked<T, U>(
+        &self,
+        class: T,
+        field: U,
+        ty: JavaType,
+    ) -> Result<JValue<'a>>
+    where
+        T: Desc<'a, JClass<'a>>,
+        U: Desc<'a, JStaticFieldID<'a>>,
+    {
+        let class = class.lookup(self)?;
+        let field_id = field.lookup(self)?;
+        self.get_static_field_unchecked_fast(class, field_id, ty)
     }
 
     /// Get a static field. Requires a class lookup and a field id lookup
